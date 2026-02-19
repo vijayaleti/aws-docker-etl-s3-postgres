@@ -152,9 +152,6 @@ This will:
 ```bash
 docker exec -it etl_db psql -U etl_user -d etl_db -c "SELECT * FROM fact_payments ORDER BY id;"
 ```
-```
-
-```markdown
 To test the upsert logic, change `data/input.csv` to include an existing `id` with a new `amount` and some new `id`s, re-run extract + transform, and query the table again. Existing rows are updated; new rows are inserted.
 
 ## Using the Makefile (optional shortcuts)
@@ -176,17 +173,19 @@ make etl-extract     # run extract step
 make etl-transform   # run transform step
 make etl-all         # run extract + transform
 make docker-down     # docker compose down
-```
 
-These shortcuts make it easy to bring up infrastructure and run the pipeline repeatedly.
+### Notes
+Buckets are minimal and private, so they fit AWS Free Tier usage.
 
-## Notes
+IAM user is limited to the raw and processed buckets following least-privilege practices.
 
-- Buckets are minimal and private, so they fit AWS Free Tier usage.
-- IAM user is limited to the raw and processed buckets following least-privilege practices.
-- The staging + upsert pattern makes the load idempotent and closer to real-world data engineering pipelines.
-- You can extend this project with:
-  - Additional transformations and quality checks
-  - Moving or copying files from raw to processed bucket after successful load
-  - Scheduled runs via cron, ECS, or workflows in a future iteration.
-```
+The staging + upsert pattern makes the load idempotent and closer to real-world data engineering pipelines.
+
+You can extend this project with:
+
+Additional transformations and quality checks
+
+Moving or copying files from raw to processed bucket after successful load
+
+Scheduled runs via cron, ECS, or workflows in a future iteration.
+
