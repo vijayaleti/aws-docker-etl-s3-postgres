@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Local config
+.env
+
+# Docker
+*.log
+
+# IDE
+.vscode/
+.idea/

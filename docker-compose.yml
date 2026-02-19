@@ -1,0 +1,37 @@
+services:
+  etl_extract:
+    build:
+      context: ./etl_extract
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    container_name: etl_extract
+    volumes:
+      - ./data:/app/data:ro
+    command: [ "python", "extract_to_s3.py" ]
+
+  db:
+    image: postgres:16
+    container_name: etl_db
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+  etl_transform:
+    build:
+      context: ./etl_transform
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    container_name: etl_transform
+    depends_on:
+      - db
+    command: [ "python", "transform_to_pg.py" ]
+
+volumes:
+  pg_data:
