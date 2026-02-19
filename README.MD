@@ -52,8 +52,8 @@ cd aws-docker-etl
 
 Make sure your AWS CLI is configured (for example, aws configure with profile default).
 
-2. Provision AWS infrastructure with Terraform
-bash
+### 2. Provision AWS infrastructure with Terraform
+```bash
 cd infra
 terraform init
 terraform apply
@@ -67,7 +67,7 @@ raw_bucket_name
 
 processed_bucket_name
 
-3. Create .env in repo root
+### 3. Create .env in repo root
 Back in the repo root (one level above infra), create a .env file:
 
 text
@@ -85,10 +85,10 @@ POSTGRES_HOST=db
 POSTGRES_PORT=5432
 Replace the placeholders with the actual Terraform output values.
 
-4. Prepare sample CSV data
+### 4. Prepare sample CSV data
 From the repo root:
 
-bash
+```bash
 mkdir -p data
 cat > data/input.csv << 'EOF'
 id,date,amount
@@ -98,14 +98,14 @@ id,date,amount
 EOF
 You can change these values later to test upsert behavior.
 
-5. Start Postgres with Docker Compose
-bash
+### 5. Start Postgres with Docker Compose
+```bash
 docker compose up -d db
 This starts the Postgres container, runs db/init.sql, and creates the fact_payments table.
 
 Running the ETL
-Step 1: Extract (local CSV → S3 raw)
-bash
+## Step 1: Extract (local CSV → S3 raw)
+```bash
 docker compose run --rm etl_extract
 This will:
 
@@ -115,8 +115,8 @@ Add a load_timestamp column
 
 Write a processed CSV to s3://RAW_BUCKET_NAME/input/processed_<uuid>.csv
 
-Step 2: Transform and load (S3 raw → Postgres)
-bash
+## Step 2: Transform and load (S3 raw → Postgres)
+```bash
 docker compose run --rm etl_transform
 This will:
 
@@ -128,19 +128,19 @@ Write rows into a staging table in Postgres
 
 Upsert into fact_payments using ON CONFLICT (id) DO UPDATE
 
-Step 3: Verify data in Postgres
-bash
+## Step 3: Verify data in Postgres
+```bash
 docker exec -it etl_db psql -U etl_user -d etl_db -c "SELECT * FROM fact_payments ORDER BY id;"
 You should see the rows from your CSV with load_timestamp populated.
 
 To test the upsert logic, change data/input.csv to include an existing id with a new amount and some new ids, re-run extract + transform, and query the table again. Existing rows are updated; new rows are inserted.
 
-Using the Makefile (optional shortcuts)
+### Using the Makefile (optional shortcuts)
 A Makefile is included in the repo root with common commands.
 
 Examples:
 
-bash
+```bash
 # Terraform
 make infra-init      # terraform init
 make infra-plan      # terraform plan
