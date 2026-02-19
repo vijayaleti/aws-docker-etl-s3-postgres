@@ -154,11 +154,6 @@ docker exec -it etl_db psql -U etl_user -d etl_db -c "SELECT * FROM fact_payment
 ```
 ```
 
-
-You’re right, that part also needs proper fences and bullets so it renders nicely.
-
-Here’s a cleaned-up version of the **“Test upsert” + Makefile + Notes** section you can paste into your README:
-
 ```markdown
 To test the upsert logic, change `data/input.csv` to include an existing `id` with a new `amount` and some new `id`s, re-run extract + transform, and query the table again. Existing rows are updated; new rows are inserted.
 
