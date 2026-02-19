@@ -44,33 +44,42 @@ This is a small but realistic data engineering project designed to run on AWS Fr
 
 ## Setup
 
+You’re right: the steps look broken because fences and headings aren’t closed/structured cleanly.
+
+Here’s a **fixed, clean section** you can paste over your current “Setup” + “Running the ETL” parts. It keeps the same content but with correct Markdown and formatting.
+
+```markdown
+## Setup
+
 ### 1. Clone repo and configure AWS
 
 ```bash
-git clone <your-repo-url>
-cd aws-docker-etl
+git clone https://github.com/vijayaleti/aws-docker-etl-s3-postgres.git
+cd aws-docker-etl-s3-postgres
+```
 
-Make sure your AWS CLI is configured (for example, aws configure with profile default).
+Make sure your AWS CLI is configured (for example, run `aws configure` and use the `default` profile).
 
-2. Provision AWS infrastructure with Terraform
-bash
+### 2. Provision AWS infrastructure with Terraform
+
+```bash
 cd infra
 terraform init
 terraform apply
-After terraform apply completes, note these outputs:
+```
 
-etl_access_key_id
+After `terraform apply` completes, note these outputs:
 
-etl_secret_access_key
+- `etl_access_key_id`
+- `etl_secret_access_key`
+- `raw_bucket_name`
+- `processed_bucket_name`
 
-raw_bucket_name
+### 3. Create `.env` in repo root
 
-processed_bucket_name
+Back in the repo root (one level above `infra`), create a `.env` file:
 
-3. Create .env in repo root
-Back in the repo root (one level above infra), create a .env file:
-
-text
+```env
 AWS_ACCESS_KEY_ID=YOUR_ETL_ACCESS_KEY_ID
 AWS_SECRET_ACCESS_KEY=YOUR_ETL_SECRET_ACCESS_KEY
 AWS_DEFAULT_REGION=us-east-1
@@ -83,12 +92,15 @@ POSTGRES_PASSWORD=etl_password
 POSTGRES_DB=etl_db
 POSTGRES_HOST=db
 POSTGRES_PORT=5432
+```
+
 Replace the placeholders with the actual Terraform output values.
 
-4. Prepare sample CSV data
+### 4. Prepare sample CSV data
+
 From the repo root:
 
-bash
+```bash
 mkdir -p data
 cat > data/input.csv << 'EOF'
 id,date,amount
@@ -96,51 +108,67 @@ id,date,amount
 2,2024-01-02,20.00
 3,2024-01-03,15.25
 EOF
+```
+
 You can change these values later to test upsert behavior.
 
-5. Start Postgres with Docker Compose
-bash
+### 5. Start Postgres with Docker Compose
+
+```bash
 docker compose up -d db
-This starts the Postgres container, runs db/init.sql, and creates the fact_payments table.
+```
 
-Running the ETL
-Step 1: Extract (local CSV → S3 raw)
-bash
+This starts the Postgres container, runs `db/init.sql`, and creates the `fact_payments` table.
+
+## Running the ETL
+
+### Step 1: Extract (local CSV → S3 raw)
+
+```bash
 docker compose run --rm etl_extract
+```
+
 This will:
 
-Read data/input.csv with pandas
+- Read `data/input.csv` with pandas  
+- Add a `load_timestamp` column  
+- Write a processed CSV to `s3://RAW_BUCKET_NAME/input/processed_<uuid>.csv`
 
-Add a load_timestamp column
+### Step 2: Transform and load (S3 raw → Postgres)
 
-Write a processed CSV to s3://RAW_BUCKET_NAME/input/processed_<uuid>.csv
-
-Step 2: Transform and load (S3 raw → Postgres)
-bash
+```bash
 docker compose run --rm etl_transform
+```
+
 This will:
 
-Find the latest CSV in s3://RAW_BUCKET_NAME/input/
+- Find the latest CSV in `s3://RAW_BUCKET_NAME/input/`  
+- Read it into pandas  
+- Load rows into a staging table in Postgres  
+- Upsert into `fact_payments` using `ON CONFLICT (id) DO UPDATE`
 
-Read it into pandas
+### Step 3: Verify data in Postgres
 
-Write rows into a staging table in Postgres
-
-Upsert into fact_payments using ON CONFLICT (id) DO UPDATE
-
-Step 3: Verify data in Postgres
-bash
+```bash
 docker exec -it etl_db psql -U etl_user -d etl_db -c "SELECT * FROM fact_payments ORDER BY id;"
-You should see the rows from your CSV with load_timestamp populated.
+```
+```
 
-To test the upsert logic, change data/input.csv to include an existing id with a new amount and some new ids, re-run extract + transform, and query the table again. Existing rows are updated; new rows are inserted.
 
-Using the Makefile (optional shortcuts)
-A Makefile is included in the repo root with common commands.
+You’re right, that part also needs proper fences and bullets so it renders nicely.
+
+Here’s a cleaned-up version of the **“Test upsert” + Makefile + Notes** section you can paste into your README:
+
+```markdown
+To test the upsert logic, change `data/input.csv` to include an existing `id` with a new `amount` and some new `id`s, re-run extract + transform, and query the table again. Existing rows are updated; new rows are inserted.
+
+## Using the Makefile (optional shortcuts)
+
+A `Makefile` is included in the repo root with common commands.
 
 Examples:
 
-bash
+```bash
 # Terraform
 make infra-init      # terraform init
 make infra-plan      # terraform plan
@@ -153,19 +181,17 @@ make etl-extract     # run extract step
 make etl-transform   # run transform step
 make etl-all         # run extract + transform
 make docker-down     # docker compose down
+```
+
 These shortcuts make it easy to bring up infrastructure and run the pipeline repeatedly.
 
-Notes
-Buckets are minimal and private, so they fit AWS Free Tier usage.
+## Notes
 
-IAM user is limited to the raw and processed buckets following least-privilege practices.
-
-The staging + upsert pattern makes the load idempotent and closer to real-world data engineering pipelines.
-
-You can extend this project with:
-
-Additional transformations and quality checks
-
-Moving or copying files from raw to processed bucket after successful load
-
-Scheduled runs via cron, ECS, or workflows in a future iteration.
+- Buckets are minimal and private, so they fit AWS Free Tier usage.
+- IAM user is limited to the raw and processed buckets following least-privilege practices.
+- The staging + upsert pattern makes the load idempotent and closer to real-world data engineering pipelines.
+- You can extend this project with:
+  - Additional transformations and quality checks
+  - Moving or copying files from raw to processed bucket after successful load
+  - Scheduled runs via cron, ECS, or workflows in a future iteration.
+```
